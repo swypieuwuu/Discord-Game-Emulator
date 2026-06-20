@@ -1,0 +1,14 @@
+[
+  {
+    "names": ["Genshin Impact", "Genshin"],
+    "location": "genshinimpact.exe"
+  },
+  {
+    "names": ["Zenless Zone Zero", "Zenless Zone", "ZZZ"],
+    "location": "zenlesszonezero game/zenlesszonezero.exe"
+  },
+  {
+  "names": ["Arknights: Endfield", "Endfield"]
+  "location": "endfield.exe"
+  }
+]
