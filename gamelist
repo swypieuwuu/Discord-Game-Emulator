@@ -1,5 +1,9 @@
 [
   {
+    "names": ["VALORANT", "VALO"],
+    "exe": "win64/valorant-win64-shipping.exe"
+  },
+  {
     "names": ["Genshin Impact", "Genshin"],
     "exe": "genshinimpact.exe"
   },
@@ -10,5 +14,5 @@
   {
     "names": ["GOALS"],
     "exe": "Steam\\steamapps\\common\\GOALS\\Game\\Binaries\\Win64\\Goals.exe"
-  }
+  },
 ]
