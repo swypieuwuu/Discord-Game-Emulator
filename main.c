@@ -7,15 +7,11 @@
 #include <stdlib.h>
 #include <dwmapi.h>
 
+#pragma comment(lib, "dwmapi.lib")
 #pragma comment(lib, "wininet.lib")
 #pragma comment(lib, "shell32.lib")
 #pragma comment(lib, "user32.lib")
 #pragma comment(lib, "gdi32.lib")
-#pragma comment(lib, "dwmapi.lib")
-
-#ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
-#define DWMWA_USE_IMMERSIVE_DARK_MODE 20
-#endif
 
 // --- CONFIGURATION ---
 const char* JSON_URL = "https://raw.githubusercontent.com/swypieuwuu/Discord-Game-Emulator/refs/heads/main/gamelist"; // UPDATE THIS
@@ -260,18 +256,6 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 
         hBtnLaunch = CreateWindowA("BUTTON", "Launch Game", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 80, 180, 120, 30, hwnd, (HMENU)2, NULL, NULL);
         
-        // Load the icon from the resource
-        // "MAINICON" is the ID you used in your .rc file
-        HICON hIcon = LoadIcon(GetModuleHandle(NULL), "MAINICON");
-
-        // Set the Big icon (used in Alt+Tab and Taskbar)
-        SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
-
-        // Set the Small icon (used in the title bar)
-        SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
-        
-        return 0;
-
         EnumChildWindows(hwnd, SetFontProc, (LPARAM)hFont);
         break;
     }
@@ -388,15 +372,6 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
     return 0;
 }
 
-void ApplyDarkMode(HWND hwnd) {
-    BOOL value = TRUE;
-    // Set the title bar to dark mode
-    DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &value, sizeof(value));
-    
-    // Optional: Refresh the title bar appearance immediately
-    SetWindowPos(hwnd, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-}
-
 int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR cmdLine, int showCmd) {
     // Setup Dark Theme Brushes
     hBgBrush = CreateSolidBrush(clrBg);
@@ -426,6 +401,7 @@ hFont = CreateFontA(-14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSE
     WNDCLASSA wc = { 0 };
     wc.lpfnWndProc = isDummy ? DummyWndProc : MainWndProc;
     wc.hInstance = hInst;
+    wc.hIcon = LoadIconA(hInst, MAKEINTRESOURCEA(101));
     wc.hbrBackground = hBgBrush;
     wc.lpszClassName = isDummy ? "DgeDummyClass" : "DgeMainClass";
     RegisterClassA(&wc);
@@ -435,9 +411,9 @@ hFont = CreateFontA(-14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSE
         CW_USEDEFAULT, CW_USEDEFAULT, 300, isDummy ? 180 : 270,
         NULL, NULL, hInst, NULL);
 
-    ApplyDarkMode(hwnd);
-
     ShowWindow(hwnd, showCmd);
+    int useImmersiveDarkMode = 1;
+    DwmSetWindowAttribute(hwnd, 20, &useImmersiveDarkMode, sizeof(useImmersiveDarkMode));
     UpdateWindow(hwnd);
 
     MSG msg;
