@@ -6,5 +6,9 @@
   {
     "names": ["God of War", "gow"],
     "exe": "godofwar\\gow.exe"
+  },
+  {
+    "names": ["God of War", "gow"],
+    "exe": "Steam\\steamapps\\common\\GOALS\\Game\\Binaries\\Win64\\Goals.exe "
   }
 ]
