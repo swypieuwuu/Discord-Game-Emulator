@@ -1,0 +1,46 @@
+[
+  {
+    "names": [""],
+    "exe": ""
+  },
+  {
+    "names": ["Honkai Star Rail", "Star Rail"],
+    "exe": "games\\starrail.exe"
+  },
+  {
+    "names": ["Zenless Zone Zero", "ZZZ"],
+    "exe": "zenlesszonezero game\\zenlesszonezero.exe"
+  },
+  {
+    "names": ["Wuthering Waves", "WuWa"],
+    "exe": "wuthering waves.exe"
+  },
+  {
+    "names": ["Where Winds Meet", "WWM"],
+    "exe": "where winds meet.exe"
+  },
+  {
+    "names": ["ARKNIGHTS ENDFIELD", "ENDFIELD"],
+    "exe": "endfield.exe"
+  },
+  {
+    "names": ["Roblox"],
+    "exe": "robloxplayerbeta.exe"
+  },
+  {
+    "names": ["VALORANT", "VALO"],
+    "exe": "win64\\valorant-win64-shipping.exe"
+  },
+  {
+    "names": ["Genshin Impact", "Genshin"],
+    "exe": "genshinimpact.exe"
+  },
+  {
+    "names": ["God of War", "gow"],
+    "exe": "godofwar\\gow.exe"
+  },
+  {
+    "names": ["GOALS"],
+    "exe": "Steam\\steamapps\\common\\GOALS\\Game\\Binaries\\Win64\\Goals.exe"
+  }
+]
