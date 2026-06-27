@@ -14,7 +14,8 @@
 #pragma comment(lib, "gdi32.lib")
 
 // --- CONFIGURATION ---
-const char* JSON_URL = "https://raw.githubusercontent.com/swypieuwuu/Discord-Game-Emulator/refs/heads/main/gamelist"; // UPDATE THIS
+const char* JSON_URL_PRIMARY = "https://raw.githubusercontent.com/swypieuwuu/Discord-Game-Emulator/refs/heads/main/gamelist/primarygamelist.json"; // UPDATE THIS
+const char* JSON_URL_FALLBACK = "https://raw.githubusercontent.com/swypieuwuu/Discord-Game-Emulator/refs/heads/main/gamelist/fallbackgamelist.json"; // UPDATE THIS
 
 // Global UI Brushes for Dark Theme
 HBRUSH hBgBrush;
@@ -37,11 +38,11 @@ HWND hGameName, hCustomExe, hTime, hBtnLaunch;
 HWND hTimerLabel, hProgressLabel, hBtnCancel;
 
 // --- UTILITY: JSON Fetcher ---
-char* FetchJSON() {
+char* FetchJSON(const char* url) {
     HINTERNET hInternet = InternetOpenA("DGE_App/1.0", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
     if (!hInternet) return NULL;
 
-    HINTERNET hUrl = InternetOpenUrlA(hInternet, JSON_URL, NULL, 0, INTERNET_FLAG_RELOAD, 0);
+    HINTERNET hUrl = InternetOpenUrlA(hInternet, url, NULL, 0, INTERNET_FLAG_RELOAD, 0);
     if (!hUrl) {
         InternetCloseHandle(hInternet);
         return NULL;
@@ -276,11 +277,21 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             char primaryName[256] = { 0 };
             char exePath[256] = { 0 };
 
-            // Fetch & Parse JSON
-            char* json = FetchJSON();
-            if (json) {
-                ParseGame(json, gameInput, primaryName, exePath);
-                free(json);
+            // Fetch & Parse Primary JSON
+            BOOL foundInJson = FALSE;
+            char* jsonPrimary = FetchJSON(JSON_URL_PRIMARY);
+            if (jsonPrimary) {
+                foundInJson = ParseGame(jsonPrimary, gameInput, primaryName, exePath);
+                free(jsonPrimary);
+            }
+
+            // If not found in Primary, try Fallback JSON
+            if (!foundInJson) {
+                char* jsonFallback = FetchJSON(JSON_URL_FALLBACK);
+                if (jsonFallback) {
+                    foundInJson = ParseGame(jsonFallback, gameInput, primaryName, exePath);
+                    free(jsonFallback);
+                }
             }
 
             // Fallback / Priorities
