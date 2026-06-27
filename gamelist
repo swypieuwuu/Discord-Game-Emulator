@@ -1,7 +1,7 @@
 [
   {
     "names": ["VALORANT", "VALO"],
-    "exe": "win64/valorant-win64-shipping.exe"
+    "exe": "win64\\valorant-win64-shipping.exe"
   },
   {
     "names": ["Genshin Impact", "Genshin"],
