@@ -62,6 +62,25 @@ char* FetchJSON(const char* url) {
     return buffer;
 }
 
+// --- UTILITY: Fuzzy String Matcher ---
+BOOL FuzzyCompare(const char* s1, const char* s2) {
+    while (*s1 || *s2) {
+        // Skip anything that isn't a letter or number in both strings
+        while (*s1 && !((*s1 >= 'A' && *s1 <= 'Z') || (*s1 >= 'a' && *s1 <= 'z') || (*s1 >= '0' && *s1 <= '9'))) s1++;
+        while (*s2 && !((*s2 >= 'A' && *s2 <= 'Z') || (*s2 >= 'a' && *s2 <= 'z') || (*s2 >= '0' && *s2 <= '9'))) s2++;
+
+        // Convert to lowercase for comparison
+        char c1 = (*s1 >= 'A' && *s1 <= 'Z') ? *s1 + 32 : *s1;
+        char c2 = (*s2 >= 'A' && *s2 <= 'Z') ? *s2 + 32 : *s2;
+
+        if (c1 != c2) return FALSE;
+
+        if (*s1) s1++;
+        if (*s2) s2++;
+    }
+    return TRUE;
+}
+
 // --- UTILITY: String Parser ---
 BOOL ParseGame(const char* json, const char* target, char* outPrimary, char* outExe) {
     const char* p = json;
@@ -89,7 +108,7 @@ BOOL ParseGame(const char* json, const char* target, char* outPrimary, char* out
                 hasPrimary = TRUE;
             }
 
-            if (_stricmp(alias, target) == 0) {
+            if (FuzzyCompare(alias, target)) {
                 matchFound = TRUE;
             }
             strStart = strEnd + 1;
