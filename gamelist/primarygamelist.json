@@ -4,6 +4,10 @@
     "exe": ""
   },
   {
+    "names": ["Delta Force"],
+    "exe": "Win64\\DeltaForceClient-Win64-Shipping.exe"
+  },
+  {
     "names": ["GearUP"],
     "exe": "Gearup_ball.exe"
   },
