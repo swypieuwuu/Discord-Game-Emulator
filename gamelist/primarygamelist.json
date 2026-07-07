@@ -4,6 +4,10 @@
     "exe": ""
   },
   {
+    "names": ["GearUP"],
+    "exe": "Gearup_ball.exe"
+  },
+  {
     "names": ["Honkai Star Rail", "Star Rail"],
     "exe": "games\\starrail.exe"
   },
