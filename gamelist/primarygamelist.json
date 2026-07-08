@@ -4,6 +4,10 @@
     "exe": ""
   },
   {
+    "names": ["Neverness to Everness", "NTE", "NTE Neverness to Everness"],
+    "exe": "htgame.exe"
+  },
+  {
     "names": ["Delta Force"],
     "exe": "Win64\\DeltaForceClient-Win64-Shipping.exe"
   },
