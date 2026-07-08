@@ -50,11 +50,35 @@ char* FetchJSON(const char* url) {
 
     DWORD bytesRead = 0;
     DWORD totalBytes = 0;
-    DWORD bufSize = 65536; // 64KB max for this lightweight app
-    char* buffer = (char*)calloc(bufSize, 1);
+    DWORD bufSize = 65536; // Start with 64KB
+    
+    // Use malloc instead of calloc so we can dynamically reallocate it
+    char* buffer = (char*)malloc(bufSize);
+    if (!buffer) {
+        InternetCloseHandle(hUrl);
+        InternetCloseHandle(hInternet);
+        return NULL;
+    }
 
+    // Read the file from the internet in chunks
     while (InternetReadFile(hUrl, buffer + totalBytes, bufSize - totalBytes - 1, &bytesRead) && bytesRead > 0) {
         totalBytes += bytesRead;
+        buffer[totalBytes] = '\0'; // Safely null-terminate the end of the string
+
+        // If we have less than 4KB of space left in our buffer, double the size!
+        if (bufSize - totalBytes < 4096) {
+            bufSize *= 2;
+            char* newBuffer = (char*)realloc(buffer, bufSize);
+            
+            // If the system refuses to give us more memory, abort safely
+            if (!newBuffer) {
+                free(buffer);
+                InternetCloseHandle(hUrl);
+                InternetCloseHandle(hInternet);
+                return NULL;
+            }
+            buffer = newBuffer;
+        }
     }
 
     InternetCloseHandle(hUrl);
@@ -84,30 +108,38 @@ BOOL FuzzyCompare(const char* s1, const char* s2) {
 // --- UTILITY: String Parser ---
 BOOL ParseGame(const char* json, const char* target, char* outPrimary, char* outExe) {
     const char* p = json;
-    while ((p = strstr(p, "\"names\"")) != NULL) {
+    
+    // Check 'p' against NULL to prevent crashes if a previous search returned NULL
+    while (p && (p = strstr(p, "\"names\"")) != NULL) {
         p = strchr(p, '[');
         if (!p) break;
+
+        const char* endArr = strchr(p, ']');
+        if (!endArr) break; // <--- FIX 1: If JSON is cut off over the network, abort safely instead of crashing
 
         char primary[256] = { 0 };
         BOOL hasPrimary = FALSE;
         BOOL matchFound = FALSE;
-        const char* endArr = strchr(p, ']');
         const char* strStart = p;
 
         // Parse array of aliases
         while ((strStart = strchr(strStart, '"')) != NULL && strStart < endArr) {
             strStart++;
             const char* strEnd = strchr(strStart, '"');
-            if (!strEnd) break;
+            if (!strEnd || strEnd > endArr) break; // FIX 2: Ensure quotes close safely inside the array
+
+            size_t len = strEnd - strStart;
+            if (len > 255) len = 255; // FIX 3: Buffer Overflow Protection
 
             char alias[256] = { 0 };
-            strncpy(alias, strStart, strEnd - strStart);
+            strncpy(alias, strStart, len);
 
             if (!hasPrimary) {
                 strcpy(primary, alias);
                 hasPrimary = TRUE;
             }
 
+            // (This uses the FuzzyCompare function we added earlier)
             if (FuzzyCompare(alias, target)) {
                 matchFound = TRUE;
             }
@@ -115,14 +147,21 @@ BOOL ParseGame(const char* json, const char* target, char* outPrimary, char* out
         }
 
         if (matchFound) {
+            // FIX 4: Ensure we only find the "exe" belonging to THIS game, not accidentally stealing the next game's exe
+            const char* nextObj = strstr(endArr, "\"names\"");
             const char* exeProp = strstr(endArr, "\"exe\"");
-            if (exeProp) {
+            
+            if (exeProp && (!nextObj || exeProp < nextObj)) {
                 const char* exeStart = strchr(exeProp + 5, '"');
                 if (exeStart) {
                     exeStart++;
                     const char* exeEnd = strchr(exeStart, '"');
                     if (exeEnd) {
-                        strncpy(outExe, exeStart, exeEnd - exeStart);
+                        size_t exeLen = exeEnd - exeStart;
+                        if (exeLen > 255) exeLen = 255; // Buffer Overflow Protection
+                        
+                        memset(outExe, 0, 256);
+                        strncpy(outExe, exeStart, exeLen);
                         strcpy(outPrimary, primary);
                         
                         // Unescape JSON '\\' to '\'
@@ -143,7 +182,7 @@ BOOL ParseGame(const char* json, const char* target, char* outPrimary, char* out
                 }
             }
         }
-        p = endArr;
+        p = endArr; // 100% Safe to jump forward now because endArr was safely NULL-checked above!
     }
     return FALSE;
 }
