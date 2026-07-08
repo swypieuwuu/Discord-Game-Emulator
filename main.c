@@ -329,7 +329,7 @@ void ExecuteQueue(HWND hwnd, BOOL isSingleShot) {
         if (strlen(primaryName) == 0) strcpy(primaryName, strlen(queue[i].gameName) > 0 ? queue[i].gameName : "CustomGame");
 
         if (strlen(exePath) == 0) {
-            char err[512]; sprintf(err, "Missing EXE path for game: '%s'. Aborting Queue.", queue[i].gameName);
+            char err[512]; sprintf(err, "Could not find path for game: '%s'. Check for spelling errors, or enter a custom EXE path.", queue[i].gameName);
             MessageBoxA(hwnd, err, "Error", MB_ICONERROR | MB_OK);
             if(jPri) free(jPri); if(jFall) free(jFall);
             if(isSingleShot) queueCount = 0; // reset
