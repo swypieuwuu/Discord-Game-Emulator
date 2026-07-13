@@ -1,0 +1,2 @@
+2.3
+https://github.com/swypieuwuu/Discord-Game-Emulator/releases/latest/download/DGE_Launcher.exe
