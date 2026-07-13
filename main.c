@@ -555,7 +555,15 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR cmdLine, int showCm
 
     ShowWindow(hwnd, showCmd); UpdateWindow(hwnd);
 
-    MSG msg; while (GetMessage(&msg, NULL, 0, 0)) { TranslateMessage(&msg); DispatchMessage(&msg); }
+    MSG msg; 
+    while (GetMessage(&msg, NULL, 0, 0)) { 
+        // Intercept 'Enter' key in the Main Window
+        if (!isDummy && msg.message == WM_KEYDOWN && msg.wParam == VK_RETURN) {
+            SendMessageA(hwnd, WM_COMMAND, isQueueMode ? 4 : 2, 0);
+        }
+        TranslateMessage(&msg); 
+        DispatchMessage(&msg); 
+    }
 
     DeleteObject(hBgBrush); DeleteObject(hBtnBrush); DeleteObject(hEditBrush); DeleteObject(hFont);
     return 0;
