@@ -1,2 +1,2 @@
 2.3
-https://raw.githubusercontent.com/swypieuwuu/Discord-Game-Emulator/refs/heads/main/Discord_Game_Emulator.exe
+https://github.com/swypieuwuu/Discord-Game-Emulator/releases/latest/download/Discord_Game_Emulator.exe
