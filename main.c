@@ -16,6 +16,9 @@
 // --- CONFIGURATION ---
 const char* JSON_URL_PRIMARY = "https://raw.githubusercontent.com/swypieuwuu/Discord-Game-Emulator/refs/heads/main/gamelist/primarygamelist.json";
 const char* JSON_URL_FALLBACK = "https://raw.githubusercontent.com/swypieuwuu/Discord-Game-Emulator/refs/heads/main/gamelist/fallbackgamelist.json";
+const float APP_VERSION = 1.0f; // Increase this in the source code every time you release a new update
+const char* VERSION_URL = "https://raw.githubusercontent.com/swypieuwuu/Discord-Game-Emulator/refs/heads/main/version.txt";
+char updateUrl[512] = { 0 };
 
 // --- GLOBALS ---
 HBRUSH hBgBrush, hBtnBrush, hEditBrush;
@@ -37,7 +40,7 @@ BOOL isQueueMode = FALSE;
 
 // Main App Controls
 HWND hGameName, hCustomExe, hTime;
-HWND hBtnLaunch, hBtnToggleQueue;
+HWND hBtnLaunch, hBtnToggleQueue, hBtnUpdate;
 HWND hBtnAddQueue, hBtnStartQueue, hBtnRemoveQueue, hListBox, hQueueLabel;
 
 // Dummy State
@@ -404,8 +407,16 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 
         hBtnLaunch = CreateWindowA("BUTTON", "Launch Game", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 80, 180, 120, 30, hwnd, (HMENU)2, NULL, NULL);
         hBtnToggleQueue = CreateWindowA("BUTTON", "", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 255, 10, 25, 25, hwnd, (HMENU)3, NULL, NULL);
-
-        // Extended Queue UI (Hidden initially)
+        char* verData = FetchJSON(VERSION_URL); 
+        BOOL updateFound = FALSE;
+        if (verData) {
+            float remoteVer;
+            if (sscanf(verData, "%f\n%s", &remoteVer, updateUrl) == 2) {
+                if (remoteVer > APP_VERSION) updateFound = TRUE;
+            }
+            free(verData);
+        }
+        hBtnUpdate = CreateWindowA("BUTTON", "", WS_CHILD | (updateFound ? WS_VISIBLE : 0) | BS_OWNERDRAW, 225, 10, 25, 25, hwnd, (HMENU)7, NULL, NULL);
         hQueueLabel = CreateWindowA("STATIC", "Session Queue:", WS_CHILD, 310, 20, 200, 20, hwnd, NULL, NULL, NULL);
         hListBox = CreateWindowA("LISTBOX", NULL, WS_CHILD | WS_BORDER | WS_VSCROLL | LBS_NOTIFY, 310, 40, 250, 122, hwnd, NULL, NULL, NULL);
         hBtnAddQueue = CreateWindowA("BUTTON", "Add to Queue", WS_CHILD | BS_OWNERDRAW, 80, 180, 120, 30, hwnd, (HMENU)4, NULL, NULL);
@@ -460,6 +471,27 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
                 queueCount--;
             }
         }
+        else if (id == 7) { // Update Button Clicked
+            if (MessageBoxA(hwnd, "A new update is available! Do you want to download and restart the app?", "Update Available", MB_ICONQUESTION | MB_YESNO) == IDYES) {
+                
+                // Get current exe name
+                char currentExe[MAX_PATH]; GetModuleFileNameA(NULL, currentExe, MAX_PATH);
+                
+                // Set temporary update download name
+                char updateExe[MAX_PATH]; strcpy(updateExe, currentExe);
+                char* lastSlash = strrchr(updateExe, '\\');
+                if (lastSlash) strcpy(lastSlash + 1, "DGE_UpdateTemp.exe");
+
+                // Generate the hidden CMD script
+                char cmdStr[2048];
+                sprintf(cmdStr, "/c curl -s -L -o \"%s\" \"%s\" & ping 127.0.0.1 -n 2 > nul & move /y \"%s\" \"%s\" & start \"\" \"%s\"",
+                    updateExe, updateUrl, updateExe, currentExe, currentExe);
+
+                // Launch terminal and kill the current app immediately!
+                ShellExecuteA(NULL, "open", "cmd.exe", cmdStr, NULL, SW_HIDE);
+                PostQuitMessage(0); 
+            }
+        }
         break;
     }
     case WM_CTLCOLORSTATIC:
@@ -471,22 +503,32 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
         LPDRAWITEMSTRUCT p = (LPDRAWITEMSTRUCT)lParam;
         FillRect(p->hDC, &p->rcItem, hBtnBrush); // Draw button background
 
-        if (p->CtlID == 3) {
-            // Draw a neat "List / Hamburger Menu" Icon for the Queue button
+        if (p->CtlID == 7) {
+            // Draw Green Download Arrow for Update Button
+            HPEN hPen = CreatePen(PS_SOLID, 2, RGB(50, 220, 50)); // Bright Green
+            HPEN hOldPen = SelectObject(p->hDC, hPen);
+            
+            MoveToEx(p->hDC, 12, 6, NULL); LineTo(p->hDC, 12, 16); // Arrow Stem
+            MoveToEx(p->hDC, 7, 11, NULL); LineTo(p->hDC, 13, 17); // Left Flap
+            MoveToEx(p->hDC, 17, 11, NULL); LineTo(p->hDC, 11, 17); // Right Flap
+            MoveToEx(p->hDC, 6, 19, NULL); LineTo(p->hDC, 19, 19); // Base Line
+            
+            SelectObject(p->hDC, hOldPen);
+            DeleteObject(hPen);
+        }
+        else if (p->CtlID == 3) {
+            // Draw Hamburger Menu for Queue Button
             HBRUSH hIconBrush = CreateSolidBrush(clrText);
             RECT line1 = { 6, 7, 19, 9 };
             RECT line2 = { 6, 12, 19, 14 };
             RECT line3 = { 6, 17, 19, 19 };
-            FillRect(p->hDC, &line1, hIconBrush);
-            FillRect(p->hDC, &line2, hIconBrush);
-            FillRect(p->hDC, &line3, hIconBrush);
+            FillRect(p->hDC, &line1, hIconBrush); FillRect(p->hDC, &line2, hIconBrush); FillRect(p->hDC, &line3, hIconBrush);
             DeleteObject(hIconBrush);
         } else {
-            // Draw Standard Text for all other buttons (Launch, Start Queue, etc.)
+            // Draw Standard Text for all other buttons
             SetBkMode(p->hDC, TRANSPARENT); 
             SetTextColor(p->hDC, clrText);
-            char btnText[32]; 
-            GetWindowTextA(p->hwndItem, btnText, 32);
+            char btnText[32]; GetWindowTextA(p->hwndItem, btnText, 32);
             DrawTextA(p->hDC, btnText, -1, &p->rcItem, DT_CENTER | DT_SINGLELINE | DT_VCENTER);
         }
         return TRUE;
