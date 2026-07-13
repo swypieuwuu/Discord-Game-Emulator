@@ -46,7 +46,8 @@ int qCurrent = 1, qTotal = 1;
 char dgeFolderPath[MAX_PATH] = { 0 };
 char origExePath[MAX_PATH] = { 0 };
 char queueFilePath[MAX_PATH] = { 0 };
-HWND hTimerLabel, hProgressLabel, hQueueStatusLabel, hBtnCancel;
+char currentGameName[256] = { 0 };
+HWND hTimerLabel, hProgressLabel, hQueueStatusLabel, hGameLabel, hBtnCancel;
 
 // --- UTILITY: Math Equation Evaluator ---
 int EvalExpr(const char** p);
@@ -250,10 +251,15 @@ LRESULT CALLBACK DummyWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     switch (msg) {
     case WM_CREATE: {
         char qStr[64]; sprintf(qStr, "Game %d of %d", qCurrent, qTotal);
-        hQueueStatusLabel = CreateWindowA("STATIC", qStr, WS_CHILD | WS_VISIBLE | SS_CENTER, 20, 15, 240, 20, hwnd, NULL, NULL, NULL);
-        hTimerLabel = CreateWindowA("STATIC", "Time Remaining: --", WS_CHILD | WS_VISIBLE | SS_CENTER, 20, 45, 240, 20, hwnd, NULL, NULL, NULL);
-        hProgressLabel = CreateWindowA("STATIC", "Progress: 0%", WS_CHILD | WS_VISIBLE | SS_CENTER, 20, 75, 240, 20, hwnd, NULL, NULL, NULL);
-        hBtnCancel = CreateWindowA("BUTTON", "Terminate", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 80, 115, 120, 30, hwnd, (HMENU)1, NULL, NULL);
+        
+        hQueueStatusLabel = CreateWindowA("STATIC", qStr, WS_CHILD | WS_VISIBLE | SS_CENTER, 20, 10, 240, 20, hwnd, NULL, NULL, NULL);
+        
+        hGameLabel = CreateWindowA("STATIC", currentGameName, WS_CHILD | WS_VISIBLE | SS_CENTER, 20, 35, 240, 20, hwnd, NULL, NULL, NULL);
+        
+        hTimerLabel = CreateWindowA("STATIC", "Time Remaining: --", WS_CHILD | WS_VISIBLE | SS_CENTER, 20, 60, 240, 20, hwnd, NULL, NULL, NULL);
+        hProgressLabel = CreateWindowA("STATIC", "Progress: 0%", WS_CHILD | WS_VISIBLE | SS_CENTER, 20, 85, 240, 20, hwnd, NULL, NULL, NULL);
+        hBtnCancel = CreateWindowA("BUTTON", "Terminate", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 80, 120, 120, 30, hwnd, (HMENU)1, NULL, NULL);
+        
         SetTimer(hwnd, 1, 1000, NULL);
         EnumChildWindows(hwnd, SetFontProc, (LPARAM)hFont);
         break;
@@ -519,6 +525,9 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR cmdLine, int showCm
                 if (line) {
                     char tIdx[16], pName[256], ePath[256], tSec[32];
                     sscanf(line + 1, "%[^|]|%[^|]|%[^|]|%s", tIdx, pName, ePath, tSec);
+                    
+                    strcpy(currentGameName, pName);
+
                     totalTime = atoi(tSec); timeLeft = totalTime;
                     
                     char tempDir[MAX_PATH]; GetTempPathA(MAX_PATH, tempDir);
