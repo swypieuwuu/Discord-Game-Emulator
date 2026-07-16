@@ -457,7 +457,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             queueCount++;
 
             char listStr[300]; 
-            char* dispName = strlen(gInput) > 0 ? gInput : "Custom Game";
+            char* dispName = strlen(gInput) > 0 ? gInput : cExe;
             sprintf(listStr, "[%dm %02ds] %s", t / 60, t % 60, dispName);
             SendMessageA(hListBox, LB_ADDSTRING, 0, (LPARAM)listStr);
 
