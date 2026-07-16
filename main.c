@@ -16,7 +16,7 @@
 // --- CONFIGURATION ---
 const char* JSON_URL_PRIMARY = "https://raw.githubusercontent.com/swypieuwuu/Discord-Game-Emulator/refs/heads/main/gamelist/primarygamelist.json";
 const char* JSON_URL_FALLBACK = "https://raw.githubusercontent.com/swypieuwuu/Discord-Game-Emulator/refs/heads/main/gamelist/fallbackgamelist.json";
-const float APP_VERSION = 1.0f; // Increase this in the source code every time you release a new update
+const float APP_VERSION = 1.0f;
 const char* VERSION_URL = "https://raw.githubusercontent.com/swypieuwuu/Discord-Game-Emulator/refs/heads/main/version.txt";
 char updateUrl[512] = { 0 };
 
