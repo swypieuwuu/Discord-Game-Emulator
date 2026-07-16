@@ -405,7 +405,7 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
         CreateWindowA("STATIC", "Time (Seconds or Math):", WS_CHILD | WS_VISIBLE, 20, 120, 200, 20, hwnd, NULL, NULL, NULL);
         hTime = CreateWindowA("EDIT", "910", WS_CHILD | WS_VISIBLE | WS_BORDER, 20, 140, 100, 22, hwnd, NULL, NULL, NULL);
 
-        hBtnLaunch = CreateWindowA("BUTTON", "Launch Game", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 80, 180, 120, 30, hwnd, (HMENU)2, NULL, NULL);
+        hBtnLaunch = CreateWindowA("BUTTON", "Emulate", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 80, 180, 120, 30, hwnd, (HMENU)2, NULL, NULL);
         hBtnToggleQueue = CreateWindowA("BUTTON", "", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 255, 10, 25, 25, hwnd, (HMENU)3, NULL, NULL);
         char* verData = FetchJSON(VERSION_URL); 
         BOOL updateFound = FALSE;
