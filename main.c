@@ -16,7 +16,7 @@
 // --- CONFIGURATION ---
 const char* JSON_URL_PRIMARY = "https://raw.githubusercontent.com/swypieuwuu/Discord-Game-Emulator/refs/heads/main/gamelist/primarygamelist.json";
 const char* JSON_URL_FALLBACK = "https://raw.githubusercontent.com/swypieuwuu/Discord-Game-Emulator/refs/heads/main/gamelist/fallbackgamelist.json";
-const float APP_VERSION = 3.1f;
+const float APP_VERSION = 3.2f;
 const char* VERSION_URL = "https://raw.githubusercontent.com/swypieuwuu/Discord-Game-Emulator/refs/heads/main/version.txt";
 char updateUrl[512] = { 0 };
 
@@ -185,18 +185,21 @@ BOOL ParseGame(const char* json, const char* target, char* outPrimary, char* out
     return FALSE;
 }
 
-// --- UTILITY: Trigger Next Queue or Self-Destruct ---
+// --- UTILITY: Trigger Next Queue or Universal Wipe ---
 void ProcessQueueBaton() {
     char cmd[MAX_PATH * 3];
+    char tempDir[MAX_PATH]; GetTempPathA(MAX_PATH, tempDir);
+    
     if (qCurrent < qTotal) {
         // Find next game in queue file, update file, and launch
         FILE* f = fopen(queueFilePath, "r");
+        char nextBaseDir[MAX_PATH] = { 0 };
+        
         if (f) {
             char fileData[8192] = { 0 };
             fread(fileData, 1, 8192, f);
             fclose(f);
 
-            // Update CURRENT= in file string
             char searchStr[32]; sprintf(searchStr, "CURRENT=%d", qCurrent);
             char replaceStr[32]; sprintf(replaceStr, "CURRENT=%d", qCurrent + 1);
             char* pos = strstr(fileData, searchStr);
@@ -205,16 +208,14 @@ void ProcessQueueBaton() {
             f = fopen(queueFilePath, "w");
             if (f) { fwrite(fileData, 1, strlen(fileData), f); fclose(f); }
 
-            // Parse next game details
             char nextTarget[32]; sprintf(nextTarget, "\n%d|", qCurrent + 1);
             char* line = strstr(fileData, nextTarget);
             if (line) {
-                line++; // skip newline
+                line++; 
                 char tIdx[16], pName[256], ePath[256], tSec[32];
                 sscanf(line, "%[^|]|%[^|]|%[^|]|%s", tIdx, pName, ePath, tSec);
 
-                char tempDir[MAX_PATH]; GetTempPathA(MAX_PATH, tempDir);
-                char nextBaseDir[MAX_PATH]; sprintf(nextBaseDir, "%sDGE_%s", tempDir, pName);
+                sprintf(nextBaseDir, "%sDGE_%s", tempDir, pName);
                 char nextExePath[MAX_PATH]; sprintf(nextExePath, "%s\\%s", nextBaseDir, ePath);
 
                 char dirToCreate[MAX_PATH]; strcpy(dirToCreate, nextExePath);
@@ -233,12 +234,13 @@ void ProcessQueueBaton() {
                 CreateProcessA(NULL, nextCmdLine, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
             }
         }
-        // Self-Destruct JUST current folder
-        sprintf(cmd, "/c ping 127.0.0.1 -n 2 > nul & rmdir /s /q \"%s\"", dgeFolderPath);
+        
+        // INTERMEDIATE WIPE: Deletes all DGE_ folders EXCEPT the one we just created for Game 2
+        sprintf(cmd, "/c ping 127.0.0.1 -n 2 > nul & for /d %%x in (\"%sDGE_*\") do if /i not \"%%~fx\"==\"%s\" rmdir /s /q \"%%x\" & del /q /f \"%sDGE_*\"", tempDir, nextBaseDir, tempDir);
         ShellExecuteA(NULL, "open", "cmd.exe", cmd, NULL, SW_HIDE);
     } else {
-        // Last Game: Self-Destruct folder, delete queue file, relaunch main
-        sprintf(cmd, "/c ping 127.0.0.1 -n 2 > nul & rmdir /s /q \"%s\" & del /q \"%s\" & start \"\" \"%s\"", dgeFolderPath, queueFilePath, origExePath);
+        // FINAL WIPE: Annihilates EVERYTHING starting with DGE_ in Temp, deletes queue file, relaunches main
+        sprintf(cmd, "/c ping 127.0.0.1 -n 2 > nul & for /d %%x in (\"%sDGE_*\") do rmdir /s /q \"%%x\" & del /q /f \"%sDGE_*\" & del /q /f \"%s\" & start \"\" \"%s\"", tempDir, tempDir, queueFilePath, origExePath);
         ShellExecuteA(NULL, "open", "cmd.exe", cmd, NULL, SW_HIDE);
     }
 }
@@ -310,6 +312,22 @@ void ExecuteQueue(HWND hwnd, BOOL isSingleShot) {
     if (isSingleShot) {
         char gInput[256], cExe[256], tInput[32];
         GetWindowTextA(hGameName, gInput, 256); GetWindowTextA(hCustomExe, cExe, 256); GetWindowTextA(hTime, tInput, 32);
+        // Convert all slashes to double backslashes '\\'
+        char tempExe[512] = { 0 };
+            char *r = cExe, *w = tempExe;
+            while (*r) {
+                if (*r == '/') {
+                    *w++ = '\\'; *w++ = '\\'; // Turn '/' into '\\'
+                } else if (*r == '\\') {
+                    *w++ = '\\'; *w++ = '\\'; // Turn '\' into '\\'
+                    if (*(r + 1) == '\\') r++; // Skip if it was already '\\'
+                } else {
+                    *w++ = *r;
+                }
+                r++;
+            }
+            *w = '\0';
+            strcpy(cExe, tempExe); // Copy the fixed text back into cExe
         const char* mathPtr = tInput; int t = EvalExpr(&mathPtr);
         if (t <= 0 || (strlen(gInput) == 0 && strlen(cExe) == 0)) {
             MessageBoxA(hwnd, "Please enter a Game Name or Custom EXE, and a valid Time.", "Error", MB_ICONERROR | MB_OK); return;
@@ -358,9 +376,9 @@ void ExecuteQueue(HWND hwnd, BOOL isSingleShot) {
     }
     if(jPri) free(jPri); if(jFall) free(jFall);
 
-    // Save dge_queue.txt
+    // Save QueueSession.txt
     char tempDir[MAX_PATH]; GetTempPathA(MAX_PATH, tempDir);
-    sprintf(queueFilePath, "%sdge_queue.txt", tempDir);
+    sprintf(queueFilePath, "%sQueueSession.txt", tempDir);
     FILE* f = fopen(queueFilePath, "w");
     if (f) { fwrite(fileBuf, 1, strlen(fileBuf), f); fclose(f); }
 
@@ -445,6 +463,23 @@ LRESULT CALLBACK MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
             if (queueCount >= 100) return 0;
             char gInput[256], cExe[256], tInput[32];
             GetWindowTextA(hGameName, gInput, 256); GetWindowTextA(hCustomExe, cExe, 256); GetWindowTextA(hTime, tInput, 32);
+            
+            // Convert all slashes to double backslashes '\\'
+            char tempExe[512] = { 0 };
+            char *r = cExe, *w = tempExe;
+            while (*r) {
+                if (*r == '/') {
+                    *w++ = '\\'; *w++ = '\\'; // Turn '/' into '\\'
+                } else if (*r == '\\') {
+                    *w++ = '\\'; *w++ = '\\'; // Turn '\' into '\\'
+                    if (*(r + 1) == '\\') r++; // Skip if it was already '\\'
+                } else {
+                    *w++ = *r;
+                }
+                r++;
+            }
+            *w = '\0';
+            strcpy(cExe, tempExe); // Copy the fixed text back into cExe
             
             const char* mathPtr = tInput; int t = EvalExpr(&mathPtr);
             if (t <= 0 || (strlen(gInput) == 0 && strlen(cExe) == 0)) {
@@ -568,7 +603,16 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR cmdLine, int showCm
                     char tIdx[16], pName[256], ePath[256], tSec[32];
                     sscanf(line + 1, "%[^|]|%[^|]|%[^|]|%s", tIdx, pName, ePath, tSec);
                     
-                    strcpy(currentGameName, pName);
+                    if (strcmp(pName, "CustomGame") == 0) {
+                        char *r = ePath, *w = currentGameName;
+                        while (*r) {
+                            if (*r == '\\' && *(r + 1) == '\\') { *w++ = '\\'; r += 2; }
+                            else { *w++ = *r++; }
+                        }
+                        *w = '\0';
+                    } else {
+                        strcpy(currentGameName, pName);
+                    }
 
                     totalTime = atoi(tSec); timeLeft = totalTime;
                     
@@ -579,6 +623,15 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR cmdLine, int showCm
         }
     }
     LocalFree(argv);
+
+    if (!isDummy) {
+        // --- UNIVERSAL STARTUP CLEANUP ---
+        // Silently deletes ALL orphaned DGE_ folders and files the moment the launcher opens
+        char tempDir[MAX_PATH]; GetTempPathA(MAX_PATH, tempDir);
+        char cleanCmd[MAX_PATH * 3];
+        sprintf(cleanCmd, "/c for /d %%x in (\"%sDGE_*\") do rmdir /s /q \"%%x\" & del /q /f \"%sDGE_*\"", tempDir, tempDir);
+        ShellExecuteA(NULL, "open", "cmd.exe", cleanCmd, NULL, SW_HIDE);
+    }
 
     WNDCLASSA wc = { 0 };
     wc.lpfnWndProc = isDummy ? DummyWndProc : MainWndProc;
