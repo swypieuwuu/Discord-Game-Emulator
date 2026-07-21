@@ -16,7 +16,7 @@
 // --- CONFIGURATION ---
 const char* JSON_URL_PRIMARY = "https://raw.githubusercontent.com/swypieuwuu/Discord-Game-Emulator/refs/heads/main/gamelist/primarygamelist.json";
 const char* JSON_URL_FALLBACK = "https://raw.githubusercontent.com/swypieuwuu/Discord-Game-Emulator/refs/heads/main/gamelist/fallbackgamelist.json";
-const float APP_VERSION = 3.2f;
+const float APP_VERSION = 3.3f;
 const char* VERSION_URL = "https://raw.githubusercontent.com/swypieuwuu/Discord-Game-Emulator/refs/heads/main/version.txt";
 char updateUrl[512] = { 0 };
 
@@ -47,7 +47,6 @@ HWND hBtnAddQueue, hBtnStartQueue, hBtnRemoveQueue, hListBox, hQueueLabel;
 int totalTime = 0, timeLeft = 0;
 int qCurrent = 1, qTotal = 1;
 char dgeFolderPath[MAX_PATH] = { 0 };
-char origExePath[MAX_PATH] = { 0 };
 char queueFilePath[MAX_PATH] = { 0 };
 char currentGameName[256] = { 0 };
 HWND hTimerLabel, hProgressLabel, hQueueStatusLabel, hGameLabel, hBtnCancel;
@@ -239,8 +238,8 @@ void ProcessQueueBaton() {
         sprintf(cmd, "/c ping 127.0.0.1 -n 2 > nul & for /d %%x in (\"%sDGE_*\") do if /i not \"%%~fx\"==\"%s\" rmdir /s /q \"%%x\" & del /q /f \"%sDGE_*\"", tempDir, nextBaseDir, tempDir);
         ShellExecuteA(NULL, "open", "cmd.exe", cmd, NULL, SW_HIDE);
     } else {
-        // FINAL WIPE: Annihilates EVERYTHING starting with DGE_ in Temp, deletes queue file, relaunches main
-        sprintf(cmd, "/c ping 127.0.0.1 -n 2 > nul & for /d %%x in (\"%sDGE_*\") do rmdir /s /q \"%%x\" & del /q /f \"%sDGE_*\" & del /q /f \"%s\" & start \"\" \"%s\"", tempDir, tempDir, queueFilePath, origExePath);
+        // FINAL WIPE: Annihilates EVERYTHING starting with DGE_ in Temp, deletes queue file
+        sprintf(cmd, "/c ping 127.0.0.1 -n 2 > nul & for /d %%x in (\"%sDGE_*\") do rmdir /s /q \"%%x\" & del /q /f \"%sDGE_*\" & del /q /f \"%s\"", tempDir, tempDir, queueFilePath);
         ShellExecuteA(NULL, "open", "cmd.exe", cmd, NULL, SW_HIDE);
     }
 }
@@ -343,7 +342,7 @@ void ExecuteQueue(HWND hwnd, BOOL isSingleShot) {
 
     char currentExe[MAX_PATH]; GetModuleFileNameA(NULL, currentExe, MAX_PATH);
     char fileBuf[8192] = { 0 };
-    sprintf(fileBuf, "TOTAL=%d\nCURRENT=1\nORIG_EXE=%s\n", queueCount, currentExe);
+    sprintf(fileBuf, "TOTAL=%d\nCURRENT=1\n", queueCount);
 
     for (int i = 0; i < queueCount; i++) {
         char primaryName[256] = { 0 }, exePath[256] = { 0 };
@@ -595,7 +594,6 @@ int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR cmdLine, int showCm
                 char fileData[8192] = { 0 }; fread(fileData, 1, 8192, f); fclose(f);
                 char* pTotal = strstr(fileData, "TOTAL="); if (pTotal) qTotal = atoi(pTotal + 6);
                 char* pCur = strstr(fileData, "CURRENT="); if (pCur) qCurrent = atoi(pCur + 8);
-                char* pOrig = strstr(fileData, "ORIG_EXE="); if (pOrig) sscanf(pOrig + 9, "%[^\n]", origExePath);
 
                 char targetLine[32]; sprintf(targetLine, "\n%d|", qCurrent);
                 char* line = strstr(fileData, targetLine);
